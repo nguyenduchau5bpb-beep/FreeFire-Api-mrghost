@@ -1,13 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
-import time
 import os
-from datetime import datetime, timedelta
 from Utilities.until import load_accounts
 from Api.Account import get_garena_token, get_major_login
 from Api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
+# Tự động tải danh sách tài khoản bot cài sẵn
 accounts = load_accounts()
 
 app = Flask(__name__)
@@ -28,7 +27,7 @@ def home():
 @app.route('/get_search_account_by_keyword', methods=['GET'])
 def get_search_account_by_keyword():
     try:
-        region = request.args.get('server', 'IND').upper()
+        region = request.args.get('server', 'VN').upper()
         search_term = request.args.get('keyword')
         
         if not search_term:
@@ -55,7 +54,7 @@ def get_search_account_by_keyword():
 @app.route('/get_player_stats', methods=['GET'])
 def get_player_stat():
     try:
-        server = request.args.get('server', 'IND').upper()
+        server = request.args.get('server', 'VN').upper()
         uid = request.args.get('uid')
         gamemode = request.args.get('gamemode', 'br').lower()
         matchmode = request.args.get('matchmode', 'CAREER').upper()
@@ -86,15 +85,16 @@ def get_player_stat():
 @app.route('/get_player_personal_show', methods=['GET'])
 def get_account_info():
     try:
-        server = request.args.get('server', 'IND').upper()
+        server = request.args.get('server', 'VN').upper()
         uid = request.args.get('uid')
         
         if not uid or not uid.isdigit():
             return jsonify({"status": "error", "message": "UID hợp lệ là bắt buộc"}), 400
         
         if server not in accounts:
-            return jsonify({"status": "error", "message": f"Server {server} không tồn tại"}), 400
+            return jsonify({"status": "error", "message": f"Server {server} không tồn tại trong accounts.json"}), 400
 
+        # Tự động lấy token từ tài khoản bot cài sẵn
         garena_token_result = get_garena_token(accounts[server]['uid'], accounts[server]['password'])
         major_login_result = get_major_login(garena_token_result["access_token"], garena_token_result["open_id"])
         
@@ -121,3 +121,4 @@ if __name__ == '__main__':
     except ImportError:
         port = int(os.environ.get("PORT", 10000))
         app.run(host='0.0.0.0', port=port)
+ 
