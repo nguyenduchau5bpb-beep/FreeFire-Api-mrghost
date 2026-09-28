@@ -4,3 +4,4 @@ protobuf>=4.23.0
 pycryptodome>=3.18.0
 requests
 waitress
+python-telegram-bot
