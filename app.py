@@ -6,7 +6,7 @@ from Utilities.until import load_accounts
 from Api.Account import get_garena_token, get_major_login
 from Api.InGame import get_player_personal_show, get_player_stats, search_account_by_keyword
 
-# Tự động tải danh sách tài khoản bot cài sẵn
+# Tải tài khoản bot cài sẵn trong accounts.json
 accounts = load_accounts()
 
 app = Flask(__name__)
@@ -94,7 +94,6 @@ def get_account_info():
         if server not in accounts:
             return jsonify({"status": "error", "message": f"Server {server} không tồn tại trong accounts.json"}), 400
 
-        # Tự động lấy token từ tài khoản bot cài sẵn
         garena_token_result = get_garena_token(accounts[server]['uid'], accounts[server]['password'])
         major_login_result = get_major_login(garena_token_result["access_token"], garena_token_result["open_id"])
         
@@ -121,4 +120,3 @@ if __name__ == '__main__':
     except ImportError:
         port = int(os.environ.get("PORT", 10000))
         app.run(host='0.0.0.0', port=port)
- 
