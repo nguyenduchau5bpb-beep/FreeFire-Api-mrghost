@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 import time
+import os
 from datetime import datetime, timedelta
 from Utilities.until import load_accounts
 from Api.Account import get_garena_token, get_major_login
@@ -16,6 +17,17 @@ app = Flask(__name__)
 CORS(app)
 
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "status": "online",
+        "message": "Free Fire API Server đang hoạt động!",
+        "endpoints": [
+            "/get_player_personal_show?uid=<UID>&server=VN",
+            "/get_player_stats?uid=<UID>&server=VN",
+            "/get_search_account_by_keyword?keyword=<NAME>&server=VN"
+        ]
+    }), 200
 
 
 @app.route('/get_search_account_by_keyword', methods=['GET'])
@@ -184,18 +196,6 @@ def get_player_stat():
                 "error": "Connection error",
                 "message": str(e)
             }), 503
-        except ProtobufError as e:
-            return jsonify({
-                "success": False,
-                "error": "Data processing error",
-                "message": str(e)
-            }), 500
-        except APIError as e:
-            return jsonify({
-                "success": False,
-                "error": "External API error",
-                "message": str(e)
-            }), 502
         except Exception as e:
             return jsonify({
                 "success": False,
@@ -235,7 +235,6 @@ def get_account_info():
         # Check if UID is a valid integer
         try:
             uid_int = int(uid)
-            # Additional validation for UID range if needed
             if uid_int <= 0:
                 response = {
                     "status": "error",
@@ -283,7 +282,6 @@ def get_account_info():
             }
             return jsonify(response), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
-        
         # Validate need_blacklist parameter
         try:
             if isinstance(need_blacklist, str):
@@ -303,7 +301,6 @@ def get_account_info():
             }
             return jsonify(response), 400, {'Content-Type': 'application/json; charset=utf-8'}
         
-        
         # Validate need_spark_info parameter
         try:
             if isinstance(need_spark_info, str):
@@ -322,10 +319,6 @@ def get_account_info():
                 "code": "INVALID_GALLERY_PARAM"
             }
             return jsonify(response), 400, {'Content-Type': 'application/json; charset=utf-8'}
-        
-        
-        
-        
         
         # Validate call_sign_src parameter
         try:
@@ -390,8 +383,6 @@ def get_account_info():
             need_spark_info
         )
         
-        
-        
         if not player_personal_show_result:
             response = {
                 "status": "error",
@@ -406,12 +397,6 @@ def get_account_info():
         return formatted_json, 200, {'Content-Type': 'application/json; charset=utf-8'}
     
     except Exception as e:
-        # Log the unexpected error for debugging
-        print(f"Unexpected error in get_player_personal_show: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
-        
         response = {
             "status": "error",
             "error": "Internal Server Error",
@@ -421,6 +406,16 @@ def get_account_info():
         return jsonify(response), 500, {'Content-Type': 'application/json; charset=utf-8'}
 
 
-
+# ==============================================================================
+# ĐOẠN KHỞI CHẠY ĐÃ ĐƯỢC CẬP NHẬT CHUẨN DÀNH CHO RENDER
+# ==============================================================================
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        from waitress import serve
+        port = int(os.environ.get("PORT", 10000))
+        print(f"🚀 API Server đang khởi chạy trên cổng {port}...")
+        serve(app, host='0.0.0.0', port=port)
+    except ImportError:
+        # Dự phòng nếu chưa cài đặt waitress
+        port = int(os.environ.get("PORT", 10000))
+        app.run(host='0.0.0.0', port=port)
